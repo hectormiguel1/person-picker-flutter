@@ -112,10 +112,14 @@ class _MainViewState extends State<MainView> {
       padding: const EdgeInsets.fromLTRB(2.0, 0.0, 10.0, 0.0),
       child: ListTile(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        title: Text(_participants[index].name),
+        title: Text(_participants[index].name,
+            style: TextStyle(
+                color: _selectedIndex == index ? Colors.white : Colors.grey)),
         leading: Icon(Icons.person),
         selected: _selectedIndex == index,
-        selectedTileColor: Colors.blue,
+        focusColor: Colors.blue,
+        selectedTileColor: Colors.indigo[900],
+        hoverColor: Colors.blue,
         onTap: () => {
           setState(() {
             this._selectedIndex = index;
@@ -190,7 +194,7 @@ class _MainViewState extends State<MainView> {
             Expanded(
               flex: 1,
               child: Container(
-                color: Colors.grey[800],
+                color: Colors.grey[900]!.withOpacity(0.5),
                 child: ListView(
                     children: _participants
                         .map((person) =>
