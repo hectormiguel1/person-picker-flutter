@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:person_picker/model/participant.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 final INITIAL_INDEX = -1;
 
@@ -17,6 +18,8 @@ class _MainViewState extends State<MainView> {
   var _selectedIndex = INITIAL_INDEX;
   var _doneLoading = false;
   List<Participant> _participants = [];
+  var scrollListController = ItemScrollController();
+  var itemPosListener = ItemPositionsListener.create();
 
   _MainViewState() {
     Future.delayed(Duration.zero).then((_) => loadJson());
@@ -25,11 +28,12 @@ class _MainViewState extends State<MainView> {
     Random rng = Random();
     setState(() {
       this._selectedIndex = rng.nextInt(_participants.length);
+      scrollListController.jumpTo(index: _selectedIndex);
     });
   }
 
   void loadJson() async {
-    final Directory directory = await Directory.current;
+    final Directory directory = Directory.current;
     final File jsonFile = File('${directory.path}/participants.json');
     List<dynamic> loadedJson = await json.decode(await jsonFile.readAsString());
     _participants =
@@ -101,7 +105,7 @@ class _MainViewState extends State<MainView> {
   }
 
   void saveToJson() async {
-    final Directory directory = await Directory.current;
+    final Directory directory = Directory.current;
     final File jsonFile = File('${directory.path}/participants.json');
     await jsonFile.writeAsString(json.encode(
         _participants.map((participant) => participant.toJson()).toList()));
@@ -114,12 +118,11 @@ class _MainViewState extends State<MainView> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: Text(_participants[index].name,
             style: TextStyle(
-                color: _selectedIndex == index ? Colors.white : Colors.grey)),
+                color: _selectedIndex == index ? Colors.white : Colors.grey[400])),
         leading: Icon(Icons.person),
         selected: _selectedIndex == index,
-        focusColor: Colors.blue,
         selectedTileColor: Colors.indigo[900],
-        hoverColor: Colors.blue,
+        hoverColor: Colors.grey[400]!.withOpacity(0.3),
         onTap: () => {
           setState(() {
             this._selectedIndex = index;
@@ -191,19 +194,20 @@ class _MainViewState extends State<MainView> {
               direction: Axis.horizontal,
               textDirection: TextDirection.ltr,
               children: [
-            Expanded(
-              flex: 1,
-              child: Container(
-                color: Colors.grey[900]!.withOpacity(0.5),
-                child: ListView(
-                    children: _participants
-                        .map((person) =>
-                            buildPersonTile(_participants.indexOf(person)))
-                        .toList()),
-              ),
-            ),
-            Expanded(flex: 3, child: buildParticipantView(_selectedIndex))
-          ]));
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                      color: Colors.grey[900]!.withOpacity(0.5),
+                      child: ScrollablePositionedList.builder(
+                        itemCount: _participants.length,
+                        itemBuilder: (_, index) => buildPersonTile(index),
+                        itemScrollController: scrollListController,
+                        itemPositionsListener: itemPosListener,
+                      )
+                  ),
+                ),
+                Expanded(flex: 3, child: buildParticipantView(_selectedIndex))
+              ]));
     }
   }
 }
