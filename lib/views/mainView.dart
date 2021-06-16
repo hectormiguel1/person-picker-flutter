@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:person_picker/backend/JsonLoader.dart';
 import 'package:person_picker/model/participant.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -33,12 +34,13 @@ class _MainViewState extends State<MainView> {
   }
 
   void loadJson() async {
-    final Directory directory = Directory.current;
-    final File jsonFile = File('${directory.path}/participants.json');
-    List<dynamic> loadedJson = await json.decode(await jsonFile.readAsString());
-    _participants =
-        loadedJson.map((person) => Participant.fromJson(person)).toList();
-    setState(() => _doneLoading = true);
+    load().then((participants) =>
+    {
+      setState(() {
+        _participants = participants;
+        _doneLoading = true;
+      })
+    });
   }
 
   Widget buildButton(BUTTONS buttonToBuild) {
@@ -105,10 +107,7 @@ class _MainViewState extends State<MainView> {
   }
 
   void saveToJson() async {
-    final Directory directory = Directory.current;
-    final File jsonFile = File('${directory.path}/participants.json');
-    await jsonFile.writeAsString(json.encode(
-        _participants.map((participant) => participant.toJson()).toList()));
+    save(_participants);
   }
 
   Widget buildPersonTile(int index) {
