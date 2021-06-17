@@ -7,7 +7,7 @@ import 'package:person_picker/backend/JsonLoader.dart';
 import 'package:person_picker/model/participant.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
-final INITIAL_INDEX = -1;
+const INITIAL_INDEX = -1;
 
 enum BUTTONS { RNG, INCREMENT, RESET, RESET_ALL }
 
@@ -26,7 +26,7 @@ class _MainViewState extends State<MainView> {
     Future.delayed(Duration.zero).then((_) => loadJson());
   }
   void selectRandom() {
-    Random rng = Random();
+    Random rng = Random(DateTime.now().microsecondsSinceEpoch);
     setState(() {
       this._selectedIndex = rng.nextInt(_participants.length);
       scrollListController.jumpTo(index: _selectedIndex);
@@ -94,7 +94,7 @@ class _MainViewState extends State<MainView> {
   void resetParticipant() {
     setState(() {
       _participants[_selectedIndex].numOfPoints = 0;
-      saveToJson();
+      saveToJson(_selectedIndex);
     });
   }
 
@@ -102,12 +102,12 @@ class _MainViewState extends State<MainView> {
     setState(() {
       _participants[_selectedIndex].numOfPoints =
           _participants[_selectedIndex].numOfPoints + 1;
-      saveToJson();
+      saveToJson(_selectedIndex);
     });
   }
 
-  void saveToJson() async {
-    save(_participants);
+  void saveToJson([index = INITIAL_INDEX]) async {
+    save(_participants, index);
   }
 
   Widget buildPersonTile(int index) {
