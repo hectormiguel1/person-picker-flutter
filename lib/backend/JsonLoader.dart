@@ -25,6 +25,16 @@ void save(List<Participant> participants, [int index = INDEX_SENTINAL_VALUE]) as
 
 }
 
+void deleteAll() {
+  _loadedParticipants.clear();
+  save(_loadedParticipants);
+}
+
+void add(Participant participant) {
+  _loadedParticipants.add(participant);
+  save(_loadedParticipants);
+}
+
 
 
 Future<void> _loadJsonLocal(File file) async {
@@ -44,7 +54,7 @@ Future<void> _loadJsonHttp(String uri) async {
   print('Http Request status Code: ${httpRequest.statusCode}');
   if (httpRequest.statusCode == HttpStatus.ok) {
     String requestBody = httpRequest.body;
-    print('GET Request Response Body: ' + requestBody);
+    //print('GET Request Response Body: ' + requestBody);
     List<dynamic> loadedData = await json.decode(requestBody);
     _loadedParticipants =
         loadedData.map((element) => Participant.fromJson(element)).toList();

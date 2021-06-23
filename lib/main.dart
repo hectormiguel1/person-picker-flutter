@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:person_picker/views/mainView.dart';
+import 'package:adaptive_theme/adaptive_theme.dart';
 
 void main() async {
   runApp(MyApp());
@@ -9,22 +10,51 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Person Picker/Bonus Point Manager',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
-        brightness: Brightness.dark,
-      ),
-      home: MainView(),
+    return AdaptiveTheme(
+        light: ThemeData(
+          primarySwatch: Colors.blue,
+          brightness: Brightness.light,
+          primaryColor: Colors.blue,
+          accentColor: Colors.blueAccent,
+          canvasColor: Colors.white,
+          backgroundColor: Colors.grey[400],
+          selectedRowColor: Colors.blue[900],
+          iconTheme: IconThemeData(color: Colors.white),
+          textTheme: TextTheme(bodyText1: TextStyle(color: Colors.black), button: TextStyle(color: Colors.black)),
+          elevatedButtonTheme: ElevatedButtonThemeData(style: ButtonStyle(
+            elevation: MaterialStateProperty.all<double>(20),
+            shape: MaterialStateProperty.all<OutlinedBorder>(
+                RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20))),
+
+          )),
+        ),
+        dark: ThemeData(
+          primarySwatch: Colors.purple,
+          brightness: Brightness.dark,
+          primaryColor: Colors.purple,
+          accentColor: Colors.purpleAccent[100],
+          canvasColor: Colors.grey[900],
+          backgroundColor: Colors.grey[700],
+          selectedRowColor: Colors.purpleAccent,
+          textTheme: TextTheme(bodyText1: TextStyle(color: Colors.grey[400]), button: TextStyle(color: Colors.white)),
+          iconTheme: IconThemeData(color: Colors.grey[200]),
+          elevatedButtonTheme: ElevatedButtonThemeData(style: ButtonStyle(
+            elevation: MaterialStateProperty.all<double>(20),
+            shape: MaterialStateProperty.all<OutlinedBorder>(
+                RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20))),
+
+          )),
+        ),
+        initial: AdaptiveThemeMode.dark,
+        builder: (theme, dark) =>
+            MaterialApp(
+                title: "Person Picker",
+                theme: theme,
+                darkTheme: dark,
+                home: MainView()
+            )
     );
   }
 }

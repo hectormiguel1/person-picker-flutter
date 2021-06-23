@@ -7,6 +7,8 @@ import 'package:person_picker/backend/JsonLoader.dart';
 import 'package:person_picker/model/participant.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
+import '../settingsPanel.dart';
+
 const INITIAL_INDEX = -1;
 
 enum BUTTONS { RNG, INCREMENT, RESET, RESET_ALL }
@@ -19,17 +21,21 @@ class _MainViewState extends State<MainView> {
   var _selectedIndex = INITIAL_INDEX;
   var _doneLoading = false;
   List<Participant> _participants = [];
-  var scrollListController = ItemScrollController();
-  var itemPosListener = ItemPositionsListener.create();
+  var _scrollListController = ItemScrollController();
+  var _itemPosListener = ItemPositionsListener.create();
+  var _scaffoldKey = new GlobalKey<ScaffoldState>();
 
   _MainViewState() {
     Future.delayed(Duration.zero).then((_) => loadJson());
   }
+
   void selectRandom() {
-    Random rng = Random(DateTime.now().microsecondsSinceEpoch);
+    Random rng = Random(DateTime
+        .now()
+        .microsecondsSinceEpoch);
     setState(() {
       this._selectedIndex = rng.nextInt(_participants.length);
-      scrollListController.jumpTo(index: _selectedIndex);
+      _scrollListController.jumpTo(index: _selectedIndex);
     });
   }
 
@@ -39,6 +45,9 @@ class _MainViewState extends State<MainView> {
       setState(() {
         _participants = participants;
         _doneLoading = true;
+        if(_participants.length < _selectedIndex) {
+          _selectedIndex = INITIAL_INDEX;
+        }
       })
     });
   }
@@ -46,7 +55,7 @@ class _MainViewState extends State<MainView> {
   Widget buildButton(BUTTONS buttonToBuild) {
     String buttonText = "";
     MaterialStateProperty<Color> buttonColor =
-        MaterialStateProperty.all<Color>(Colors.white);
+    MaterialStateProperty.all<Color>(Colors.white);
     var callFunction;
     if (buttonToBuild == BUTTONS.RNG) {
       buttonText = "Pick Random Person";
@@ -111,24 +120,40 @@ class _MainViewState extends State<MainView> {
   }
 
   Widget buildPersonTile(int index) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(2.0, 0.0, 10.0, 0.0),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        title: Text(_participants[index].name,
-            style: TextStyle(
-                color: _selectedIndex == index ? Colors.white : Colors.grey[400])),
-        leading: Icon(Icons.person),
-        selected: _selectedIndex == index,
-        selectedTileColor: Colors.indigo[900],
-        hoverColor: Colors.grey[400]!.withOpacity(0.3),
-        onTap: () => {
-          setState(() {
-            this._selectedIndex = index;
-          })
-        },
-      ),
-    );
+    if(_participants.length > 0) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(2.0, 0.0, 10.0, 0.0),
+        child: ListTile(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10)),
+          title: Text(_participants[index].name,
+              style: _selectedIndex == index ? Theme
+                  .of(context)
+                  .textTheme
+                  .button : Theme
+                  .of(context)
+                  .textTheme
+                  .bodyText1),
+          leading: Icon(Icons.person),
+          selected: _selectedIndex == index,
+          selectedTileColor: Theme
+              .of(context)
+              .selectedRowColor,
+          hoverColor: Theme
+              .of(context)
+              .selectedRowColor
+              .withOpacity(0.3),
+          onTap: () =>
+          {
+            setState(() {
+              this._selectedIndex = index;
+            })
+          },
+        ),
+      );
+    } else {
+      return Container();
+    }
   }
 
   Widget buildParticipantView(int participantIndex) {
@@ -184,11 +209,24 @@ class _MainViewState extends State<MainView> {
     }
   }
 
+  Widget floatingButton() {
+    return FloatingActionButton(
+      backgroundColor: Theme.of(context).primaryColor,
+      child: Icon(Icons.settings, color: Theme.of(context).iconTheme.color),
+      onPressed: () {
+        showModalBottomSheet(context: context, builder: (context) => SettingsPanel());
+      }
+      ,
+    );
+  }
+
   Widget build(BuildContext context) {
     if (!_doneLoading) {
-      return CircularProgressIndicator(color: Colors.blue);
+      return CircularProgressIndicator(color: Theme.of(context).primaryColor);
     } else {
       return Scaffold(
+        backgroundColor: Theme.of(context).canvasColor,
+        key: _scaffoldKey,
           body: Flex(
               direction: Axis.horizontal,
               textDirection: TextDirection.ltr,
@@ -196,17 +234,22 @@ class _MainViewState extends State<MainView> {
                 Expanded(
                   flex: 1,
                   child: Container(
-                      color: Colors.grey[900]!.withOpacity(0.5),
+                      color: Theme.of(context).backgroundColor.withOpacity(0.3),
                       child: ScrollablePositionedList.builder(
                         itemCount: _participants.length,
                         itemBuilder: (_, index) => buildPersonTile(index),
-                        itemScrollController: scrollListController,
-                        itemPositionsListener: itemPosListener,
+                        itemScrollController: _scrollListController,
+                        itemPositionsListener: _itemPosListener,
                       )
                   ),
                 ),
-                Expanded(flex: 3, child: buildParticipantView(_selectedIndex))
-              ]));
+                Expanded(flex: 3,
+                    child: Center(child: ListView(
+                      scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.fromLTRB(100, 100, 100, 100),
+                        children: [buildParticipantView(_selectedIndex)])))
+              ]),
+      floatingActionButton: floatingButton(),);
     }
   }
 }
