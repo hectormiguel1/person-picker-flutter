@@ -1,17 +1,16 @@
-import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:person_picker/backend/JsonLoader.dart';
+import 'package:person_picker/components/customButton.dart';
+import 'package:person_picker/components/personTile.dart';
 import 'package:person_picker/model/participant.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../settingsPanel.dart';
 
 const INITIAL_INDEX = -1;
-
-enum BUTTONS { RNG, INCREMENT, RESET, RESET_ALL }
 
 class MainView extends StatefulWidget {
   _MainViewState createState() => _MainViewState();
@@ -24,17 +23,17 @@ class _MainViewState extends State<MainView> {
   var _scrollListController = ItemScrollController();
   var _itemPosListener = ItemPositionsListener.create();
   var _scaffoldKey = new GlobalKey<ScaffoldState>();
+  final Random rng = new Random.secure();
 
   _MainViewState() {
     Future.delayed(Duration.zero).then((_) => loadJson());
   }
 
   void selectRandom() {
-    Random rng = Random(DateTime
-        .now()
-        .microsecondsSinceEpoch);
+    //Bit shifts to the highest possible 32 bit integer.
+    int max = 1 << 31;
     setState(() {
-      this._selectedIndex = rng.nextInt(_participants.length);
+      this._selectedIndex = ( rng.nextInt(max) ) % _participants.length;
       _scrollListController.jumpTo(index: _selectedIndex);
     });
   }
@@ -58,18 +57,13 @@ class _MainViewState extends State<MainView> {
     MaterialStateProperty.all<Color>(Colors.white);
     var callFunction;
     if (buttonToBuild == BUTTONS.RNG) {
-      buttonText = "Pick Random Person";
-      buttonColor = MaterialStateProperty.all<Color>(Colors.blue);
-      callFunction = () => selectRandom();
+      return CustomButton(buttonType: buttonToBuild, onPressed: () => selectRandom(), buttonText: "Pick Random person", buttonIcon: FaIcon(FontAwesomeIcons.random));
     } else if (buttonToBuild == BUTTONS.INCREMENT) {
-      buttonText = "Add Point";
-      buttonColor = MaterialStateProperty.all<Color>(Colors.green);
-      callFunction = () => addPoints();
+      return CustomButton(buttonType: buttonToBuild, onPressed: () => addPoints(), buttonText: "Add Points", buttonIcon: FaIcon(FontAwesomeIcons.plus));
     } else if (buttonToBuild == BUTTONS.RESET) {
-      buttonText = "Reset Current Participant";
-      buttonColor = MaterialStateProperty.all<Color>(Colors.red);
-      callFunction = () => resetParticipant();
+      return CustomButton(buttonType: buttonToBuild, onPressed: () => resetParticipant(), buttonText: "Reset Current Participant", buttonIcon: FaIcon(FontAwesomeIcons.undo));
     } else if (buttonToBuild == BUTTONS.RESET_ALL) {
+      return CustomButton(buttonType: buttonToBuild, onPressed: () => resetAll(), buttonText: "Reset All Participants Points", buttonIcon: FaIcon(FontAwesomeIcons.trash));
       buttonText = "Reset All Participants Points";
       buttonColor = MaterialStateProperty.all<Color>(Colors.redAccent);
       callFunction = () => resetAll();
@@ -121,36 +115,11 @@ class _MainViewState extends State<MainView> {
 
   Widget buildPersonTile(int index) {
     if(_participants.length > 0) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(2.0, 0.0, 10.0, 0.0),
-        child: ListTile(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
-          title: Text(_participants[index].name,
-              style: _selectedIndex == index ? Theme
-                  .of(context)
-                  .textTheme
-                  .button : Theme
-                  .of(context)
-                  .textTheme
-                  .bodyText1),
-          leading: Icon(Icons.person),
-          selected: _selectedIndex == index,
-          selectedTileColor: Theme
-              .of(context)
-              .selectedRowColor,
-          hoverColor: Theme
-              .of(context)
-              .selectedRowColor
-              .withOpacity(0.3),
-          onTap: () =>
-          {
-            setState(() {
-              this._selectedIndex = index;
-            })
-          },
-        ),
-      );
+      return PersonTile(person: _participants[index], onPressed: () => {
+        this.setState(() {
+          _selectedIndex = index;
+        }),
+      }, isSelected: (index == this._selectedIndex));
     } else {
       return Container();
     }
