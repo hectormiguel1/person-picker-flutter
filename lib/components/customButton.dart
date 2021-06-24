@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:person_picker/views/mainView.dart';
 
-enum BUTTONS { RNG, INCREMENT, RESET, RESET_ALL }
+enum BUTTONS { RNG, INCREMENT, DECREMENT, RESET, RESET_ALL, DELETE }
 
 class CustomButton extends StatelessWidget {
   final BUTTONS buttonType;
@@ -9,14 +8,17 @@ class CustomButton extends StatelessWidget {
   final buttonText;
   final buttonIcon;
   static final Map<BUTTONS, Color> buttonColors = {
-    BUTTONS.RNG:  Colors.blue,
+    BUTTONS.RNG: Colors.blue,
     BUTTONS.INCREMENT: Colors.green,
     BUTTONS.RESET: Colors.red,
     BUTTONS.RESET_ALL: Colors.redAccent,
+    BUTTONS.DECREMENT: Colors.purple,
+    BUTTONS.DELETE: Colors.brown,
   };
   late final _buttonStyle;
 
-  CustomButton({required this.buttonType, required this.onPressed, required this.buttonText, this.buttonIcon}) {
+  CustomButton(
+      {required this.buttonType, required this.onPressed, required this.buttonText, this.buttonIcon}) {
     _buttonStyle = ButtonStyle(
       backgroundColor: MaterialStateProperty.all(buttonColors[buttonType]),
       shape: MaterialStateProperty.all<OutlinedBorder>(
@@ -28,11 +30,15 @@ class CustomButton extends StatelessWidget {
 
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 250,
-      height: 100,
+      width: 200,
+      height: 200,
       child: ElevatedButton(
         style: _buttonStyle,
-        child: (buttonIcon == null)? Text(buttonText) : Row( mainAxisSize: MainAxisSize.min, children: [buttonIcon, SizedBox(width: 15), Text(buttonText)],),
+        child: (buttonIcon == null) ? Text(buttonText) : Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [buttonIcon, SizedBox(height: 15), Text(buttonText, textAlign: TextAlign.center,)],),
         onPressed: onPressed,
       ),
     );

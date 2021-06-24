@@ -1,4 +1,6 @@
-class Participant {
+import 'package:equatable/equatable.dart';
+
+class Participant extends Equatable{
   String name;
   int numOfPoints;
 
@@ -14,4 +16,7 @@ class Participant {
   String toString() {
     return "Participant:{name: $name, points: $numOfPoints}";
   }
+
+  @override
+  List<Object> get props => [name, numOfPoints];
 }

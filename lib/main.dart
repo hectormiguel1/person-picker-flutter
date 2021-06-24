@@ -12,13 +12,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return AdaptiveTheme(
         light: ThemeData(
-          primarySwatch: Colors.blue,
+          primarySwatch: Colors.green,
           brightness: Brightness.light,
-          primaryColor: Colors.blue,
-          accentColor: Colors.blueAccent,
+          primaryColor: Colors.green,
+          accentColor: Colors.greenAccent,
           canvasColor: Colors.white,
           backgroundColor: Colors.grey[400],
-          selectedRowColor: Colors.blue[900],
+          selectedRowColor: Colors.green[900],
+          errorColor: Colors.redAccent[700],
           iconTheme: IconThemeData(color: Colors.white),
           textTheme: TextTheme(bodyText1: TextStyle(color: Colors.black), button: TextStyle(color: Colors.black)),
           elevatedButtonTheme: ElevatedButtonThemeData(style: ButtonStyle(
@@ -37,6 +38,8 @@ class MyApp extends StatelessWidget {
           canvasColor: Colors.grey[900],
           backgroundColor: Colors.grey[700],
           selectedRowColor: Colors.purpleAccent,
+          errorColor: Colors.red[900],
+          colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.purple, brightness: Brightness.dark),
           textTheme: TextTheme(bodyText1: TextStyle(color: Colors.grey[400]), button: TextStyle(color: Colors.white)),
           iconTheme: IconThemeData(color: Colors.grey[200]),
           elevatedButtonTheme: ElevatedButtonThemeData(style: ButtonStyle(

@@ -2,13 +2,15 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:person_picker/backend/JsonLoader.dart';
+import 'package:get/get.dart';
+import 'package:get/get_state_manager/src/rx_flutter/rx_getx_widget.dart';
+import 'package:person_picker/backend/store.dart';
 import 'package:person_picker/components/customButton.dart';
 import 'package:person_picker/components/personTile.dart';
 import 'package:person_picker/model/participant.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
-import '../settingsPanel.dart';
+import 'settingsPanel.dart';
 
 const INITIAL_INDEX = -1;
 
@@ -18,104 +20,98 @@ class MainView extends StatefulWidget {
 
 class _MainViewState extends State<MainView> {
   var _selectedIndex = INITIAL_INDEX;
-  var _doneLoading = false;
-  List<Participant> _participants = [];
   var _scrollListController = ItemScrollController();
   var _itemPosListener = ItemPositionsListener.create();
   var _scaffoldKey = new GlobalKey<ScaffoldState>();
   final Random rng = new Random.secure();
+  late DataStore _dataStore;
 
-  _MainViewState() {
-    Future.delayed(Duration.zero).then((_) => loadJson());
-  }
-
-  void selectRandom() {
+  void selectRandom(int listLength) {
     //Bit shifts to the highest possible 32 bit integer.
     int max = 1 << 31;
     setState(() {
-      this._selectedIndex = ( rng.nextInt(max) ) % _participants.length;
+      this._selectedIndex = (rng.nextInt(max)) % listLength;
       _scrollListController.jumpTo(index: _selectedIndex);
     });
   }
 
-  void loadJson() async {
-    load().then((participants) =>
-    {
-      setState(() {
-        _participants = participants;
-        _doneLoading = true;
-        if(_participants.length < _selectedIndex) {
-          _selectedIndex = INITIAL_INDEX;
-        }
-      })
-    });
-  }
-
-  Widget buildButton(BUTTONS buttonToBuild) {
-    String buttonText = "";
-    MaterialStateProperty<Color> buttonColor =
-    MaterialStateProperty.all<Color>(Colors.white);
-    var callFunction;
+  Widget buildButton(BUTTONS buttonToBuild,
+      List<Participant> participantList) {
+    String buttonText = "Unknown Button Type";
     if (buttonToBuild == BUTTONS.RNG) {
-      return CustomButton(buttonType: buttonToBuild, onPressed: () => selectRandom(), buttonText: "Pick Random person", buttonIcon: FaIcon(FontAwesomeIcons.random));
+      return CustomButton(buttonType: buttonToBuild,
+          onPressed: () => selectRandom(participantList.length),
+          buttonText: "Pick Random person",
+          buttonIcon: FaIcon(FontAwesomeIcons.random));
     } else if (buttonToBuild == BUTTONS.INCREMENT) {
-      return CustomButton(buttonType: buttonToBuild, onPressed: () => addPoints(), buttonText: "Add Points", buttonIcon: FaIcon(FontAwesomeIcons.plus));
+      return CustomButton(buttonType: buttonToBuild,
+          onPressed: () => addPoints(participantList),
+          buttonText: "Add Point",
+          buttonIcon: FaIcon(FontAwesomeIcons.plus));
     } else if (buttonToBuild == BUTTONS.RESET) {
-      return CustomButton(buttonType: buttonToBuild, onPressed: () => resetParticipant(), buttonText: "Reset Current Participant", buttonIcon: FaIcon(FontAwesomeIcons.undo));
+      return CustomButton(buttonType: buttonToBuild,
+          onPressed: () => resetParticipant(participantList),
+          buttonText: "Reset points for ${participantList[_selectedIndex].name}",
+          buttonIcon: FaIcon(FontAwesomeIcons.undo));
     } else if (buttonToBuild == BUTTONS.RESET_ALL) {
-      return CustomButton(buttonType: buttonToBuild, onPressed: () => resetAll(), buttonText: "Reset All Participants Points", buttonIcon: FaIcon(FontAwesomeIcons.trash));
-      buttonText = "Reset All Participants Points";
-      buttonColor = MaterialStateProperty.all<Color>(Colors.redAccent);
-      callFunction = () => resetAll();
+      return CustomButton(buttonType: buttonToBuild,
+          onPressed: () => resetAll(participantList),
+          buttonText: "Reset All Participants Points",
+          buttonIcon: FaIcon(FontAwesomeIcons.trash));
+    } else if (buttonToBuild == BUTTONS.DECREMENT) {
+      return CustomButton(buttonType: buttonToBuild,
+          onPressed: () => decrement(participantList),
+          buttonText: "Remove Point",
+          buttonIcon: FaIcon(FontAwesomeIcons.minus));
+    } else if(buttonToBuild == BUTTONS.DELETE) {
+      return CustomButton(buttonType: buttonToBuild, onPressed: () => deleteParticipant(participantList[_selectedIndex]), buttonText: 'Delete ${participantList[_selectedIndex].name}', buttonIcon: FaIcon(FontAwesomeIcons.userMinus),);
     }
-    final buttonStyle = ButtonStyle(
-      shape: MaterialStateProperty.all<OutlinedBorder>(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-      backgroundColor: buttonColor,
-      elevation: MaterialStateProperty.all<double>(20.0),
-    );
-    return SizedBox(
-      width: 200,
-      height: 100,
-      child: ElevatedButton(
-        style: buttonStyle,
-        child: Text(buttonText),
-        onPressed: callFunction,
-      ),
-    );
+    else
+      return CustomButton(buttonType: buttonToBuild,
+          onPressed: () => {},
+          buttonText: buttonText);
   }
 
-  void resetAll() {
+  void resetAll(List<Participant> participantList) {
     setState(() {
-      _participants.forEach((element) {
+      participantList.forEach((element) {
         element.numOfPoints = 0;
       });
-      saveToJson();
+      saveToJson(participantList);
     });
   }
 
-  void resetParticipant() {
+  void resetParticipant(List<Participant> participantList) {
     setState(() {
-      _participants[_selectedIndex].numOfPoints = 0;
-      saveToJson(_selectedIndex);
+      participantList[_selectedIndex].numOfPoints = 0;
+      saveToJson(participantList, _selectedIndex);
     });
   }
 
-  void addPoints() {
+  void addPoints(List<Participant> participantList) {
     setState(() {
-      _participants[_selectedIndex].numOfPoints =
-          _participants[_selectedIndex].numOfPoints + 1;
-      saveToJson(_selectedIndex);
+      participantList[_selectedIndex].numOfPoints =
+          participantList[_selectedIndex].numOfPoints + 1;
+      saveToJson(participantList, _selectedIndex);
     });
   }
 
-  void saveToJson([index = INITIAL_INDEX]) async {
-    save(_participants, index);
+  void decrement(List<Participant> participants) {
+    setState(() {
+      participants[_selectedIndex].numOfPoints--;
+      saveToJson(participants, _selectedIndex);
+    });
   }
 
-  Widget buildPersonTile(int index) {
-    if(_participants.length > 0) {
-      return PersonTile(person: _participants[index], onPressed: () => {
+  void saveToJson(List<Participant> participants,
+      [index = INITIAL_INDEX]) async {
+    _dataStore.save(participants, index);
+  }
+
+  Widget buildPersonTile(int index, List<Participant> participantList) {
+    if (participantList.length > 0) {
+      return PersonTile(person: participantList[index], onPressed: () =>
+      {
         this.setState(() {
           _selectedIndex = index;
         }),
@@ -125,7 +121,17 @@ class _MainViewState extends State<MainView> {
     }
   }
 
-  Widget buildParticipantView(int participantIndex) {
+  Widget buildParticipantView(int participantIndex,
+      List<Participant> participantList) {
+    final crossAxisSpacing = 50.0;
+    final mainAxisSpacing = 50.0;
+    final availableSpace = (((MediaQuery
+        .of(context)
+        .size
+        .width - MediaQuery
+        .of(context)
+        .size
+        .width / 3) - crossAxisSpacing) / 250).round();
     if (participantIndex == INITIAL_INDEX) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -136,89 +142,118 @@ class _MainViewState extends State<MainView> {
           SizedBox(
             height: 50,
           ),
-          buildButton(BUTTONS.RNG),
+          buildButton(BUTTONS.RNG, participantList),
           SizedBox(
             height: 50,
           ),
-          buildButton(BUTTONS.RESET_ALL),
+          buildButton(BUTTONS.RESET_ALL, participantList),
         ],
       );
     } else {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text("Person Picked: ${_participants[_selectedIndex].name}",
-              style: TextStyle(fontSize: 24)),
-          SizedBox(height: 50),
-          Text(
-            "Current Points: ${_participants[_selectedIndex].numOfPoints}",
-            style: TextStyle(fontSize: 24),
-          ),
-          SizedBox(height: 50),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              buildButton(BUTTONS.INCREMENT),
-              SizedBox(
-                width: 20,
-              ),
-              buildButton(BUTTONS.RNG),
-              SizedBox(
-                width: 20,
-              ),
-              buildButton(BUTTONS.RESET),
-            ],
-          ),
-          SizedBox(height: 50),
-          buildButton(BUTTONS.RESET_ALL),
-        ],
+      return SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(height: 50),
+
+            Text("Person Picked: ${participantList[participantIndex].name}",
+                style: TextStyle(fontSize: 24)),
+            SizedBox(height: 50),
+            Text(
+              "Current Points: ${participantList[participantIndex]
+                  .numOfPoints}",
+              style: TextStyle(fontSize: 24),
+            ),
+            SizedBox(height: 50),
+
+            GridView.count(
+              padding: const EdgeInsets.fromLTRB(50, 50, 50, 150),
+              crossAxisCount: availableSpace + 1,
+              mainAxisSpacing: mainAxisSpacing,
+              crossAxisSpacing: crossAxisSpacing,
+              scrollDirection: Axis.vertical,
+              shrinkWrap: true,
+              children: [
+                buildButton(BUTTONS.INCREMENT, participantList),
+                buildButton(BUTTONS.DECREMENT, participantList),
+                buildButton(BUTTONS.RNG, participantList),
+                buildButton(BUTTONS.RESET, participantList),
+                buildButton(BUTTONS.RESET_ALL, participantList),
+                buildButton(BUTTONS.DELETE, participantList),
+              ],
+            ),
+          ],
+        ),
       );
     }
   }
 
-  Widget floatingButton() {
+  Widget floatingButton(DataStore storage) {
     return FloatingActionButton(
-      backgroundColor: Theme.of(context).primaryColor,
-      child: Icon(Icons.settings, color: Theme.of(context).iconTheme.color),
+      backgroundColor: Theme
+          .of(context)
+          .primaryColor,
+      child: Icon(Icons.settings, color: Theme
+          .of(context)
+          .iconTheme
+          .color),
       onPressed: () {
-        showModalBottomSheet(context: context, builder: (context) => SettingsPanel());
+        showModalBottomSheet(
+            context: context, builder: (context) => SettingsPanel(storage));
       }
       ,
     );
   }
 
   Widget build(BuildContext context) {
-    if (!_doneLoading) {
-      return CircularProgressIndicator(color: Theme.of(context).primaryColor);
-    } else {
-      return Scaffold(
-        backgroundColor: Theme.of(context).canvasColor,
-        key: _scaffoldKey,
-          body: Flex(
-              direction: Axis.horizontal,
-              textDirection: TextDirection.ltr,
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: Container(
-                      color: Theme.of(context).backgroundColor.withOpacity(0.3),
-                      child: ScrollablePositionedList.builder(
-                        itemCount: _participants.length,
-                        itemBuilder: (_, index) => buildPersonTile(index),
-                        itemScrollController: _scrollListController,
-                        itemPositionsListener: _itemPosListener,
-                      )
-                  ),
-                ),
-                Expanded(flex: 3,
-                    child: Center(child: ListView(
-                      scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.fromLTRB(100, 100, 100, 100),
-                        children: [buildParticipantView(_selectedIndex)])))
-              ]),
-      floatingActionButton: floatingButton(),);
-    }
+    final screenSize = MediaQuery
+        .of(context)
+        .size
+        .width;
+    return GetBuilder<DataStore>(
+        init: DataStore(),
+        builder: (dataStore) {
+          _dataStore = dataStore;
+          return Scaffold(
+              backgroundColor: Theme
+                  .of(context)
+                  .canvasColor,
+              key: _scaffoldKey,
+              body: Flex(
+                  direction: Axis.horizontal,
+                  textDirection: TextDirection.ltr,
+                  children: [
+                    Expanded(
+                      flex: screenSize > 700 ? 1 : 2,
+                      child: Container(
+                          color: Theme
+                              .of(context)
+                              .backgroundColor
+                              .withOpacity(0.3),
+                          child: ScrollablePositionedList.builder(
+                            itemCount: dataStore.loadedParticipants.length,
+                            itemBuilder: (_, index) =>
+                                buildPersonTile(
+                                    index, dataStore.loadedParticipants),
+                            itemScrollController: _scrollListController,
+                            itemPositionsListener: _itemPosListener,
+                          )
+                      ),
+                    ),
+                    Expanded(flex: screenSize > 700 ? 3 : 4,
+                        child: buildParticipantView(
+                            _selectedIndex, dataStore.loadedParticipants))
+                  ]),
+              floatingActionButton: floatingButton(dataStore));
+        });
+  }
+
+  void deleteParticipant(Participant participant) {
+    _dataStore.removeUser(participant);
+        setState(() {
+          _selectedIndex = INITIAL_INDEX;
+        });
   }
 }
+
