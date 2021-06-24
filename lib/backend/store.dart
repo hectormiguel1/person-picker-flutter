@@ -31,11 +31,12 @@ Future load() async {
   Future save(List<Participant> participants, [int index = INDEX_SENTINAL_VALUE]) async {
     if(loadedLocalFile) {
       return;
+    } else {
+      if (index != INDEX_SENTINAL_VALUE) {
+        _saveRemotePut(participants, index);
+      } else
+        _saveRemote(defaultHttpFileURI, participants);
     }
-    if (index != INDEX_SENTINAL_VALUE) {
-      _saveRemotePut(participants, index);
-    } else
-      _saveRemote(defaultHttpFileURI, participants);
   }
 
   void deleteAll() {
@@ -122,6 +123,7 @@ Future load() async {
     List<dynamic> loadedData = await json.decode(file.toString());
     loadedParticipants.clear();
     loadedParticipants.addAll(loadedData.map((element) => Participant.fromJson(element)).toList());
+    loadedLocalFile = true;
     update();
   }
 
@@ -133,6 +135,7 @@ Future load() async {
     List<dynamic> loadedData = await json.decode(file.toString());
     loadedParticipants.clear();
     loadedParticipants.addAll(loadedData.map((element) => Participant.fromJson(element)).toList());
+    loadedLocalFile = true;
     update();
   }
 
