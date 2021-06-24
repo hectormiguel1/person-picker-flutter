@@ -176,8 +176,8 @@ class _MainViewState extends State<MainView> {
               shrinkWrap: true,
               children: [
                 buildButton(BUTTONS.INCREMENT, participantList),
-                buildButton(BUTTONS.DECREMENT, participantList),
                 buildButton(BUTTONS.RNG, participantList),
+                buildButton(BUTTONS.DECREMENT, participantList),
                 buildButton(BUTTONS.RESET, participantList),
                 buildButton(BUTTONS.RESET_ALL, participantList),
                 buildButton(BUTTONS.DELETE, participantList),

@@ -43,7 +43,7 @@ Future load() async {
     save(loadedParticipants);
   }
 
-  void add(Participant participant) {
+  Future<void> add(Participant participant) async {
     loadedParticipants.add(participant);
     loadedParticipants.sort();
     save(loadedParticipants);
