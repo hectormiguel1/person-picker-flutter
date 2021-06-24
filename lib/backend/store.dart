@@ -45,6 +45,7 @@ Future load() async {
 
   void add(Participant participant) {
     loadedParticipants.add(participant);
+    loadedParticipants.sort();
     save(loadedParticipants);
     update();
   }
