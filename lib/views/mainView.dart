@@ -80,11 +80,32 @@ class _MainViewState extends State<MainView> {
   }
 
   void resetAll(List<Participant> participantList) {
-    setState(() {
-      participantList.forEach((element) {
-        element.numOfPoints = 0;
-      });
-      saveToJson(participantList);
+    showDialog(context: context, builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          title: Text("Reset All Points?"),
+          content: Text("Are you sure you want to reset points for all participants?"),
+          actions: [
+            TextButton(child: Text("Cancel", style:  Theme
+                .of(context)
+                .textTheme
+                .bodyText1!
+                .copyWith(
+              color: AdaptiveTheme.of(context).mode == AdaptiveThemeMode.dark? Colors.white : Colors.black)), onPressed: () => Navigator.of(context).pop()),
+            FlatButton(
+              color: Colors.red,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                child: Text("Reset All", style: Theme.of(context).textTheme.button!.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            )), onPressed: () {
+              _dataStore.loadedParticipants.forEach((element) => element.numOfPoints = 0);
+              setState(() {});
+              saveToJson(participantList);
+              Navigator.of(context).pop();
+            })
+          ]
+      );
     });
   }
 
@@ -176,7 +197,7 @@ class _MainViewState extends State<MainView> {
 
             GridView.count(
               padding: const EdgeInsets.fromLTRB(50, 50, 50, 150),
-              crossAxisCount: availableSpace + 1,
+              crossAxisCount: availableSpace,
               mainAxisSpacing: mainAxisSpacing,
               crossAxisSpacing: crossAxisSpacing,
               scrollDirection: Axis.vertical,
@@ -231,21 +252,31 @@ class _MainViewState extends State<MainView> {
                   direction: Axis.horizontal,
                   textDirection: TextDirection.ltr,
                   children: [
+                    if(screenSize > 700)
                     Expanded(
                       flex: screenSize > 700 ? 1 : 2,
-                      child: Container(
-                          color: Theme
-                              .of(context)
-                              .backgroundColor
-                              .withOpacity(0.3),
-                          child: ScrollablePositionedList.builder(
-                            itemCount: dataStore.loadedParticipants.length,
-                            itemBuilder: (_, index) =>
-                                buildPersonTile(
-                                    index, dataStore.loadedParticipants),
-                            itemScrollController: _scrollListController,
-                            itemPositionsListener: _itemPosListener,
-                          )
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(10,20,10,20),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.all(Radius.circular(15)),
+                            color: Theme
+                                .of(context)
+                                .backgroundColor
+                                .withOpacity(0.3),
+                          ),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(5, 10, 5, 10),
+                              child: ScrollablePositionedList.builder(
+                                itemCount: dataStore.loadedParticipants.length,
+                                itemBuilder: (_, index) =>
+                                    buildPersonTile(
+                                        index, dataStore.loadedParticipants),
+                                itemScrollController: _scrollListController,
+                                itemPositionsListener: _itemPosListener,
+                              ),
+                            )
+                        ),
                       ),
                     ),
                     Expanded(flex: screenSize > 700 ? 3 : 4,
@@ -280,6 +311,7 @@ class _MainViewState extends State<MainView> {
   void deleteParticipant(Participant participant) {
     showDialog(context: context, builder: (context) {
       return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         title: Text('Remove ${participant.name}?'),
         content: Text(
           "Are you sure you want to remove Participant: ${participant.name}"),
@@ -291,18 +323,19 @@ class _MainViewState extends State<MainView> {
                 .bodyText1!
                 .copyWith(
               color: AdaptiveTheme.of(context).mode == AdaptiveThemeMode.dark? Colors.white : Colors.black,
-              fontWeight: FontWeight.bold,
             ),),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          TextButton(
+          FlatButton(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            color: Colors.red,
             child: Text("Delete", style: Theme
                 .of(context)
                 .textTheme
                 .button!
                 .copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.red,
+              color: Colors.white,
             )),
             onPressed: () {
               _dataStore.removeUser(participant).then((_) =>
@@ -312,6 +345,7 @@ class _MainViewState extends State<MainView> {
               Navigator.of(context).pop();
             },
           ),
+
         ],
       );
     });

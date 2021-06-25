@@ -18,12 +18,6 @@ class SettingsPanel extends StatefulWidget{
 
 class _SettingsPanelState extends State<SettingsPanel> {
   final DataStore _dataStore;
-  final _buttonStyle = ButtonStyle(
-    shape: MaterialStateProperty.all<OutlinedBorder>(
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-    elevation: MaterialStateProperty.all<double>(20.0),
-  );
-
   _SettingsPanelState(this._dataStore);
 
   Widget _darkModeToggle() {
@@ -65,12 +59,23 @@ class _SettingsPanelState extends State<SettingsPanel> {
         onPressed: () {
           showDialog(context: context, builder: (context) {
             return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               title: Text("Delete All Participants?"),
               content: Text("Are you sure you want to delete all participants?"),
               actions: [
-                TextButton(child: Text("Cancel"), onPressed: () => Navigator.of(context).pop()),
-                TextButton(child: Text("Delete All", style: Theme.of(context).textTheme.button!.copyWith(
-                  color: Colors.red
+                TextButton(child: Text("Cancel", style:  Theme
+                    .of(context)
+                    .textTheme
+                    .bodyText1!
+                    .copyWith(
+                  color: AdaptiveTheme.of(context).mode == AdaptiveThemeMode.dark? Colors.white : Colors.black,
+                )), onPressed: () => Navigator.of(context).pop()),
+                FlatButton(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    color: Colors.red,
+                    child: Text("Delete All", style: Theme.of(context).textTheme.button!.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 )), onPressed: () {
                   _dataStore.deleteAll();
                   Navigator.of(context).pop();
@@ -81,6 +86,64 @@ class _SettingsPanelState extends State<SettingsPanel> {
         },
       ),
     );
+  }
+
+  void _addParticipant() {
+    String participantFName = "";
+    String participantLName = "";
+    showDialog(context: context, builder: (context) {
+      return Dialog(
+        elevation: 20,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        insetPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+          child: SizedBox(
+            height: 200,
+            width: 250,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                TextField(
+                    decoration: InputDecoration(
+                        hintText: "Enter Participant First Name....",
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15))),
+                  onChanged: (value) => participantFName = value,
+                ),
+                SizedBox(height: 20,),
+                TextField(
+                  decoration: InputDecoration(
+                      hintText: "Enter Participant Last Name....",
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15))),
+                  onChanged: (value) => participantLName = value,
+                ),
+                SizedBox(height: 20,),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                  FlatButton(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular((15))),
+                    child: Text("Cancel"),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  FlatButton(
+                    color: Theme.of(context).primaryColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    child: Text("Add Participant", style: TextStyle(color: Colors.white)),
+                    onPressed: () {
+                      _dataStore.loadedParticipants.add(Participant(name: '$participantFName $participantLName'));
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],)
+              ]
+            ),
+          ),
+        )
+      );
+    });
   }
 
   Widget _addParticipantButton() {
@@ -95,47 +158,7 @@ class _SettingsPanelState extends State<SettingsPanel> {
               SizedBox(height: 10),
               Text("Add a new Participant", textAlign: TextAlign.center,)
             ]),
-        onPressed: () {
-          showModalBottomSheet(context: context, builder: (context) {
-            String participantFName = "";
-            String participantLName = "";
-            int startingPoints = 0;
-            return Padding(
-              padding: const EdgeInsets.all(30.0),
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    SizedBox(height: 20),
-                    TextField(
-                      decoration: InputDecoration(
-                          hintText: "Enter Participant First name..."),
-                      onChanged: (value) => participantFName = value,
-                    ),
-                    SizedBox(height: 20),
-
-                    TextField(decoration: InputDecoration(
-                        hintText: "Enter participant Last Name...."),
-                        onChanged: (value) => participantLName = value),
-                    SizedBox(height: 20),
-
-                    ElevatedButton(
-                      child: Row(mainAxisSize: MainAxisSize.min,
-                          children: [Icon(Icons.check), Text("Submit")]),
-                      onPressed: () {
-                        _dataStore.add(new Participant(name: (participantFName +
-                            " " + participantLName)));
-                        Navigator.of(context).pop();
-                      },
-                    ),
-
-                  ]
-
-              ),
-            );
-          });
-        },
+        onPressed: () => _addParticipant(),
       ),
     );
   }
