@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 // ignore: avoid_web_libraries_in_flutter
 import 'package:file_picker_cross/file_picker_cross.dart';
+import 'package:flutter/foundation.dart';
 import "package:universal_html/html.dart" as html;
 import 'package:person_picker/model/participant.dart';
 import 'package:http/http.dart' as http;
@@ -17,6 +18,7 @@ class DataStore extends GetxController {
   late List<Participant> loadedParticipants;
   late final RxList<Participant> participantsObserver;
   bool loadedLocalFile = false;
+  late String localFilePath;
 
   DataStore() {
     loadedParticipants = new List<Participant>.empty(growable: true);
@@ -30,7 +32,9 @@ Future load() async {
 
   Future save(List<Participant> participants, [int index = INDEX_SENTINAL_VALUE]) async {
     if(loadedLocalFile) {
-      return;
+      if(!kIsWeb) {
+        saveLocal();
+      }
     } else {
       if (index != INDEX_SENTINAL_VALUE) {
         _saveRemotePut(participants, index);
@@ -39,9 +43,10 @@ Future load() async {
     }
   }
 
-  void deleteAll() {
+  void deleteAll() async {
     loadedParticipants.clear();
     save(loadedParticipants);
+    update();
   }
 
   Future<void> add(Participant participant) async {
@@ -54,7 +59,7 @@ Future load() async {
   Map<String, String> GetHeader = {"Accept": "application/json"};
   Future<void> _loadJsonHttp(String uri) async {
     var httpRequest = await http.get(Uri.parse(uri), headers: GetHeader);
-    print('Http Request status Code: ${httpRequest.statusCode}');
+    //print('Http Request status Code: ${httpRequest.statusCode}');
     if (httpRequest.statusCode == HttpStatus.ok) {
       String requestBody = httpRequest.body;
       //print('GET Request Response Body: ' + requestBody);
@@ -62,6 +67,14 @@ Future load() async {
       loadedParticipants.addAll(loadedData.map((element) => Participant.fromJson(element)).toList());
       update( );
     }
+  }
+
+  Future<void> saveLocal() async {
+    //print("Saving to Local File: $localFilePath");
+    String jsonString = json.encode(loadedParticipants);
+    File localFile = File(localFilePath);
+    localFile.writeAsString(jsonString);
+
   }
   Future<void> _saveRemote(String postURI, List<Participant> persons) async {
     try {
@@ -102,12 +115,11 @@ Future load() async {
 
   Future<void> saveLocallyFromDesktop() async {
     final jsonString = json.encode(loadedParticipants);
-    final folderPath = Directory.current.path;
-    File fileWriter = File('$folderPath/participants.json');
+    File fileWriter = File(localFilePath);
     fileWriter.writeAsString(jsonString);
   }
 
-  void removeUser(Participant participant) {
+  Future<void> removeUser(Participant participant) async {
     if(loadedParticipants.contains(participant)) {
       loadedParticipants.remove(participant);
       update();
@@ -133,6 +145,7 @@ Future load() async {
         fileExtension: 'json'
     );
     List<dynamic> loadedData = await json.decode(file.toString());
+    localFilePath = file.path!;
     loadedParticipants.clear();
     loadedParticipants.addAll(loadedData.map((element) => Participant.fromJson(element)).toList());
     loadedLocalFile = true;

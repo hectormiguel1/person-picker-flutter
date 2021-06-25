@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-class Participant extends Equatable{
+class Participant implements Comparable<Participant>{
   String name;
   int numOfPoints;
 
@@ -18,5 +18,7 @@ class Participant extends Equatable{
   }
 
   @override
-  List<Object> get props => [name, numOfPoints];
+  int compareTo(other) {
+    return name.compareTo(other.name);
+  }
 }

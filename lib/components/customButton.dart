@@ -36,7 +36,7 @@ class CustomButton extends StatelessWidget {
         style: _buttonStyle,
         child: (buttonIcon == null) ? Text(buttonText) : Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [buttonIcon, SizedBox(height: 15), Text(buttonText, textAlign: TextAlign.center,)],),
         onPressed: onPressed,

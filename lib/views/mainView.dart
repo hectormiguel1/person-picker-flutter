@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
@@ -28,11 +29,13 @@ class _MainViewState extends State<MainView> {
 
   void selectRandom(int listLength) {
     //Bit shifts to the highest possible 32 bit integer.
-    int max = 1 << 31;
-    setState(() {
-      this._selectedIndex = (rng.nextInt(max)) % listLength;
-      _scrollListController.jumpTo(index: _selectedIndex);
-    });
+    if (listLength > 0) {
+      int max = 1 << 31;
+      setState(() {
+        this._selectedIndex = rng.nextInt(listLength);
+        _scrollListController.jumpTo(index: _selectedIndex);
+      });
+    }
   }
 
   Widget buildButton(BUTTONS buttonToBuild,
@@ -51,7 +54,8 @@ class _MainViewState extends State<MainView> {
     } else if (buttonToBuild == BUTTONS.RESET) {
       return CustomButton(buttonType: buttonToBuild,
           onPressed: () => resetParticipant(participantList),
-          buttonText: "Reset points for ${participantList[_selectedIndex].name}",
+          buttonText: "Reset points for ${participantList[_selectedIndex]
+              .name}",
           buttonIcon: FaIcon(FontAwesomeIcons.undo));
     } else if (buttonToBuild == BUTTONS.RESET_ALL) {
       return CustomButton(buttonType: buttonToBuild,
@@ -63,8 +67,11 @@ class _MainViewState extends State<MainView> {
           onPressed: () => decrement(participantList),
           buttonText: "Remove Point",
           buttonIcon: FaIcon(FontAwesomeIcons.minus));
-    } else if(buttonToBuild == BUTTONS.DELETE) {
-      return CustomButton(buttonType: buttonToBuild, onPressed: () => deleteParticipant(participantList[_selectedIndex]), buttonText: 'Delete ${participantList[_selectedIndex].name}', buttonIcon: FaIcon(FontAwesomeIcons.userMinus),);
+    } else if (buttonToBuild == BUTTONS.DELETE) {
+      return CustomButton(buttonType: buttonToBuild,
+        onPressed: () => deleteParticipant(participantList[_selectedIndex]),
+        buttonText: 'Delete ${participantList[_selectedIndex].name}',
+        buttonIcon: FaIcon(FontAwesomeIcons.userMinus),);
     }
     else
       return CustomButton(buttonType: buttonToBuild,
@@ -245,15 +252,69 @@ class _MainViewState extends State<MainView> {
                         child: buildParticipantView(
                             _selectedIndex, dataStore.loadedParticipants))
                   ]),
-              floatingActionButton: floatingButton(dataStore));
+              floatingActionButton: _dataStore.loadedLocalFile ? Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+
+                  SizedBox(
+                    width: 200,
+                    child: FloatingActionButton(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        backgroundColor: Theme
+                            .of(context)
+                            .errorColor,
+                        child: Text("Running in Local Mode", style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),),
+                        onPressed: null),
+                  ),
+
+                  SizedBox(width: 50,),
+                  floatingButton(dataStore)
+                ],
+              ) : floatingButton(dataStore));
         });
   }
 
   void deleteParticipant(Participant participant) {
-    _dataStore.removeUser(participant);
-        setState(() {
-          _selectedIndex = INITIAL_INDEX;
-        });
+    showDialog(context: context, builder: (context) {
+      return AlertDialog(
+        title: Text('Remove ${participant.name}?'),
+        content: Text(
+          "Are you sure you want to remove Participant: ${participant.name}"),
+        actions: [
+          TextButton(
+            child: Text("Cancel",  style:  Theme
+                .of(context)
+                .textTheme
+                .bodyText1!
+                .copyWith(
+              color: AdaptiveTheme.of(context).mode == AdaptiveThemeMode.dark? Colors.white : Colors.black,
+              fontWeight: FontWeight.bold,
+            ),),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          TextButton(
+            child: Text("Delete", style: Theme
+                .of(context)
+                .textTheme
+                .button!
+                .copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            )),
+            onPressed: () {
+              _dataStore.removeUser(participant).then((_) =>
+                  setState(() {
+                    _selectedIndex = INITIAL_INDEX;
+                  }));
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      );
+    });
   }
 }
 

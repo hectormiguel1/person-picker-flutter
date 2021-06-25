@@ -51,7 +51,6 @@ class _SettingsPanelState extends State<SettingsPanel> {
   }
 
   Widget _deleteAllParticipants() {
-
     return SizedBox(
       height: 100,
       width: 100,
@@ -64,7 +63,21 @@ class _SettingsPanelState extends State<SettingsPanel> {
               Text("Remove All Participants", textAlign: TextAlign.center,)
             ]),
         onPressed: () {
-          _dataStore.deleteAll();
+          showDialog(context: context, builder: (context) {
+            return AlertDialog(
+              title: Text("Delete All Participants?"),
+              content: Text("Are you sure you want to delete all participants?"),
+              actions: [
+                TextButton(child: Text("Cancel"), onPressed: () => Navigator.of(context).pop()),
+                TextButton(child: Text("Delete All", style: Theme.of(context).textTheme.button!.copyWith(
+                  color: Colors.red
+                )), onPressed: () {
+                  _dataStore.deleteAll();
+                  Navigator.of(context).pop();
+                })
+              ]
+            );
+          });
         },
       ),
     );
@@ -142,7 +155,8 @@ class _SettingsPanelState extends State<SettingsPanel> {
                   Row(
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [_deleteAllParticipants(),
+                      children: [
+                        _deleteAllParticipants(),
                         SizedBox(width: 50),
                         _addParticipantButton(),
                         SizedBox(width: 50),
@@ -183,9 +197,9 @@ class _SettingsPanelState extends State<SettingsPanel> {
             child: Column(mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  FaIcon(FontAwesomeIcons.upload),
+                  kIsWeb? FaIcon(FontAwesomeIcons.upload) : FaIcon(FontAwesomeIcons.file),
                   SizedBox(height: 10),
-                  Text("Upload Local Participant File", textAlign: TextAlign.center,)
+                  kIsWeb? Text("Upload Local Participant File", textAlign: TextAlign.center) : Text("Open Local File", textAlign: TextAlign.center)
                 ]),
             onPressed: () =>  kIsWeb? _dataStore.uploadFromWeb() : _dataStore.openFromDesktop()));
   }
